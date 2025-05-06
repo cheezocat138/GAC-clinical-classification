@@ -5,10 +5,10 @@ import os
 
 from multimodal.utils.config import CONFIG, DATA_PATHS, DATA_PROCESSING
 
-class HiSeqDataProcessor:
+class RPPADataProcessor:
     def __init__(self, data_dir: str = None):
         """
-        初始化HiSeq数据处理器
+        初始化RPPA数据处理器
         
         Args:
             data_dir: 数据目录路径，如果为None则使用配置中的路径
@@ -18,32 +18,32 @@ class HiSeqDataProcessor:
         else:
             self.data_dir = Path(data_dir)
         
-    def load_and_process_data(self, expression_file: str = None, 
+    def load_and_process_data(self, rppa_file: str = None, 
                              survival_file: str = None) -> pd.DataFrame:
         """
-        加载并处理基因表达数据
+        加载并处理RPPA数据
         
         Args:
-            expression_file: 基因表达数据文件路径，如果为None则使用配置中的路径
+            rppa_file: RPPA数据文件路径，如果为None则使用配置中的路径
             survival_file: 生存数据文件路径，如果为None则使用配置中的路径
             
         Returns:
-            处理后的数据框，包含基因表达数据和生存组信息
+            处理后的数据框，包含RPPA数据和生存组信息
         """
         # 使用配置中的文件路径，如果未指定
-        if expression_file is None:
-            expression_path = DATA_PATHS['hiseq_expression_data']
+        if rppa_file is None:
+            rppa_path = DATA_PATHS['rppa_data']
         else:
-            expression_path = self.data_dir / expression_file
+            rppa_path = self.data_dir / rppa_file
             
         if survival_file is None:
             survival_path = DATA_PATHS['survival_data']
         else:
             survival_path = self.data_dir / survival_file
         
-        # 读取基因表达数据
-        print(f"加载基因表达数据：{expression_path}")
-        expression_data = pd.read_csv(expression_path, index_col=0)
+        # 读取RPPA数据
+        print(f"加载RPPA数据：{rppa_path}")
+        rppa_data = pd.read_csv(rppa_path)
         
         # 读取生存数据
         print(f"加载生存数据：{survival_path}")
@@ -51,53 +51,61 @@ class HiSeqDataProcessor:
         
         # 调整样本ID列名
         if 'sampleID' in survival_data.columns:
-            sample_id_col = 'sampleID'
+            survival_id_col = 'sampleID'
         else:
-            sample_id_col = 'sample_id'
+            survival_id_col = 'sample_id'
+            
+        rppa_id_col = 'sample'
+        if rppa_id_col not in rppa_data.columns:
+            for col in rppa_data.columns:
+                if 'sample' in col.lower() or 'id' in col.lower():
+                    rppa_id_col = col
+                    break
         
         # 确保样本ID匹配
-        print(f"基因表达样本数量：{len(expression_data.index)}")
-        print(f"生存数据样本数量：{len(survival_data[sample_id_col])}")
+        print(f"RPPA样本数量：{len(rppa_data[rppa_id_col])}")
+        print(f"生存数据样本数量：{len(survival_data[survival_id_col])}")
         
-        common_samples = set(expression_data.index) & set(survival_data[sample_id_col])
+        common_samples = set(rppa_data[rppa_id_col]) & set(survival_data[survival_id_col])
         print(f"匹配样本数量：{len(common_samples)}")
         
         # 提取共同样本的数据
-        expression_filtered = expression_data.loc[list(common_samples)]
-        survival_filtered = survival_data[survival_data[sample_id_col].isin(common_samples)]
+        rppa_filtered = rppa_data[rppa_data[rppa_id_col].isin(common_samples)]
+        survival_filtered = survival_data[survival_data[survival_id_col].isin(common_samples)]
         
-        # 将生存组信息添加到表达数据中
-        survival_dict = dict(zip(survival_filtered[sample_id_col], survival_filtered['survival_group_code']))
-        expression_filtered['survival_group_code'] = expression_filtered.index.map(survival_dict)
+        # 将生存组信息添加到RPPA数据中
+        # 创建样本ID到生存组的映射
+        survival_dict = dict(zip(survival_filtered[survival_id_col], survival_filtered['survival_group_code']))
+        rppa_filtered['survival_group_code'] = rppa_filtered[rppa_id_col].map(survival_dict)
         
         # 检查是否有缺失值
-        if expression_filtered['survival_group_code'].isna().any():
+        if rppa_filtered['survival_group_code'].isna().any():
             print("警告：部分样本缺失生存组信息，这些样本将被移除")
-            expression_filtered = expression_filtered.dropna(subset=['survival_group_code'])
+            rppa_filtered = rppa_filtered.dropna(subset=['survival_group_code'])
             
         # 将survival_group_code转换为整数
-        expression_filtered['survival_group_code'] = expression_filtered['survival_group_code'].astype(int)
+        rppa_filtered['survival_group_code'] = rppa_filtered['survival_group_code'].astype(int)
         
         # 应用数据转换配置
-        transform_config = DATA_PROCESSING['transformation']['hiseq']
+        transform_config = DATA_PROCESSING['transformation']['rppa']
         
         # 填充缺失值
         if transform_config['fill_na'] is not None:
-            numeric_cols = expression_filtered.select_dtypes(include=[np.number]).columns
+            numeric_cols = rppa_filtered.select_dtypes(include=[np.number]).columns
             
             if transform_config['fill_na'] == 'mean':
-                fill_values = expression_filtered[numeric_cols].mean()
+                fill_values = rppa_filtered[numeric_cols].mean()
             elif transform_config['fill_na'] == 'median':
-                fill_values = expression_filtered[numeric_cols].median()
+                fill_values = rppa_filtered[numeric_cols].median()
             elif transform_config['fill_na'] == 'constant':
                 fill_values = 0
             else:
-                fill_values = expression_filtered[numeric_cols].median()
+                fill_values = rppa_filtered[numeric_cols].median()
                 
-            expression_filtered[numeric_cols] = expression_filtered[numeric_cols].fillna(fill_values)
+            rppa_filtered[numeric_cols] = rppa_filtered[numeric_cols].fillna(fill_values)
             print(f"使用{transform_config['fill_na']}方法填充缺失值")
-            
-        return expression_filtered
+        
+        return rppa_filtered
     
     def save_processed_data(self, data: pd.DataFrame, output_file: str = None):
         """
@@ -108,7 +116,7 @@ class HiSeqDataProcessor:
             output_file: 输出文件路径，如果为None则使用配置中的路径
         """
         if output_file is None:
-            output_path = DATA_PATHS['hiseq_processed_data']
+            output_path = DATA_PATHS['rppa_processed_data']
         else:
             output_path = self.data_dir / output_file
         
@@ -117,7 +125,7 @@ class HiSeqDataProcessor:
         
         print(f"保存处理后的数据到：{output_path}")
         print(f"处理后的数据维度：{data.shape}")
-        data.to_csv(output_path)
+        data.to_csv(output_path, index=False)
         print("保存完成")
         
     def preprocess(self, apply_feature_selection: bool = None):
@@ -127,7 +135,7 @@ class HiSeqDataProcessor:
         Args:
             apply_feature_selection: 是否应用特征选择，如果为None则使用配置中的设置
         """
-        print("开始HiSeq数据预处理...")
+        print("开始RPPA数据预处理...")
         
         # 加载并处理数据
         processed_data = self.load_and_process_data()
@@ -140,9 +148,9 @@ class HiSeqDataProcessor:
             # 特征选择代码将在这里实现
             print("应用特征选择...")
             # processed_data = self._apply_feature_selection(processed_data)
-            
+        
         # 保存处理后的数据
         self.save_processed_data(processed_data)
         
-        print("HiSeq数据预处理完成")
+        print("RPPA数据预处理完成")
         return processed_data 

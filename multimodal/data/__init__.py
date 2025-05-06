@@ -14,8 +14,9 @@ import numpy as np
 from sklearn.preprocessing import RobustScaler, StandardScaler
 from imblearn.over_sampling import SMOTE
 
-from .rppa_data import RPPADataProcessor
-from .hiseq_data import HiSeqDataProcessor
+# 使用绝对导入
+from multimodal.data.rppa_data import RPPADataProcessor
+from multimodal.data.hiseq_data import HiSeqDataProcessor
 
 __all__ = [
     'RPPADataProcessor',
@@ -23,4 +24,4 @@ __all__ = [
 ]
 
 # 版本信息
-__version__ = '0.1.0' 
+__version__ = '0.1.0'

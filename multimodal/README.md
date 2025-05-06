@@ -7,9 +7,12 @@
 multimodal/
 ├── data/
 │   ├── raw/
+│   │   ├── common/
+│   │   │   └── survival_three_groups.csv
 │   │   ├── hiseq/
 │   │   │   └── expression_data.csv
-│   │   └── survival_three_groups.csv
+│   │   └── rppa/
+│   │       └── rppa_data.csv
 │   ├── processed/
 │   └── __init__.py
 │   ├── rppa_data.py     # RPPA数据处理
@@ -247,14 +250,114 @@ if __name__ == "__main__":
 
 ## 数据说明
 
+### 公共数据
+- 生存数据文件 `survival_three_groups.csv` 应放置在 `data/raw/common/` 目录下
+- 该文件包含样本ID和对应的生存组信息
+- 列名：sampleID, _PATIENT, OS, OS.time, DSS, DSS.time, DFI, DFI.time, PFI, PFI.time, Redaction, survival_group_code, survival_group_label, survival_group, survival_days
+
 ### HiSeq数据
 - 原始基因表达数据应放置在 `data/raw/hiseq/expression_data.csv`
 - 数据格式：CSV文件，第一行为基因名称，第一列为样本ID
 - 数据维度：约400+样本 x 20000+基因
-- 生存数据文件 `survival_three_groups.csv` 应放置在 `data/raw/` 目录下
+
+### RPPA数据
+- 原始蛋白表达数据应放置在 `data/raw/rppa/rppa_data.csv`
 
 ### 数据预处理
-使用 `data/hiseq_data.py` 中的 `HiSeqDataProcessor` 类进行数据处理：
+使用 `data/hiseq_data.py` 和 `data/rppa_data.py` 中的处理器类进行数据处理：
 1. 提取与生存数据匹配的样本
 2. 添加生存组信息
 3. 保存处理后的数据到 `data/processed/` 目录 
+
+## 系统配置
+
+系统使用统一的配置管理，所有配置项都定义在`utils/config.py`中。主要配置包括：
+
+### 数据路径配置
+所有数据文件路径都配置在`DATA_PATHS`字典中，便于统一管理：
+
+```python
+DATA_PATHS = {
+    # 原始数据路径
+    'raw_data_dir': ROOT_DIR / 'data' / 'raw',
+    'processed_data_dir': ROOT_DIR / 'data' / 'processed',
+    
+    # 公共数据
+    'survival_data': ROOT_DIR / 'data' / 'raw' / 'common' / 'survival_three_groups.csv',
+    
+    # HiSeq数据
+    'hiseq_expression_data': ROOT_DIR / 'data' / 'raw' / 'hiseq' / 'expression_data.csv',
+    'hiseq_processed_data': ROOT_DIR / 'data' / 'processed' / 'hiseq_processed.csv',
+    
+    # RPPA数据
+    'rppa_data': ROOT_DIR / 'data' / 'raw' / 'rppa' / 'rppa_data.csv',
+    'rppa_processed_data': ROOT_DIR / 'data' / 'processed' / 'rppa_processed.csv',
+}
+```
+
+### 数据处理配置
+数据处理的相关参数配置在`DATA_PROCESSING`字典中：
+
+```python
+DATA_PROCESSING = {
+    # 是否应用数据平衡
+    'apply_smote': True,
+    
+    # 特征选择配置
+    'feature_selection': {
+        'enabled': True,
+        'max_features': 1000,  # 最大特征数
+        'method': 'variance',  # 特征选择方法
+    },
+    
+    # 数据转换配置
+    'transformation': {
+        'hiseq': {
+            'scaler': 'robust',  # 缩放方法
+            'fill_na': 'median', # 缺失值填充方法
+        },
+        'rppa': {
+            'scaler': 'robust',
+            'fill_na': 'median',
+        }
+    },
+}
+```
+
+### 日志系统
+系统提供了统一的日志记录功能，定义在`utils/logger.py`中：
+
+```python
+# 获取默认日志记录器
+from multimodal.utils.logger import LOGGER
+
+# 记录日志
+LOGGER.info("这是一条信息")
+LOGGER.warning("这是一条警告")
+LOGGER.error("这是一条错误")
+
+# 获取特定模块的日志记录器
+from multimodal.utils.logger import get_logger
+module_logger = get_logger("module_name")
+```
+
+### 处理后数据存放位置
+- HiSeq数据处理后的文件保存在：`data/processed/hiseq_processed.csv`
+- RPPA数据处理后的文件保存在：`data/processed/rppa_processed.csv`
+
+## 使用方法
+
+### 数据预处理
+
+```python
+from multimodal.data.hiseq_data import HiSeqDataProcessor
+from multimodal.data.rppa_data import RPPADataProcessor
+
+# 处理HiSeq数据
+hiseq_processor = HiSeqDataProcessor()
+hiseq_data = hiseq_processor.preprocess()
+
+# 处理RPPA数据
+rppa_processor = RPPADataProcessor()
+rppa_data = rppa_processor.preprocess()
+``` 

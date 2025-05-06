@@ -1,0 +1,76 @@
+# Python缓存文件
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 数据文件 - 保留目录结构
+multimodal/data/raw/*
+!multimodal/data/raw/.gitkeep
+!multimodal/data/raw/common/
+multimodal/data/raw/common/*
+!multimodal/data/raw/common/.gitkeep
+!multimodal/data/raw/hiseq/
+multimodal/data/raw/hiseq/*
+!multimodal/data/raw/hiseq/.gitkeep
+!multimodal/data/raw/rppa/
+multimodal/data/raw/rppa/*
+!multimodal/data/raw/rppa/.gitkeep
+
+multimodal/data/processed/*
+!multimodal/data/processed/.gitkeep
+
+# 日志和结果 - 保留目录结构
+multimodal/logs/*
+!multimodal/logs/.gitkeep
+multimodal/results/*
+!multimodal/results/.gitkeep
+multimodal/results/plots/*
+!multimodal/results/plots/.gitkeep
+
+# 模型文件 - 保留目录结构
+multimodal/models/saved/*
+!multimodal/models/saved/.gitkeep
+*.pt
+*.pth
+*.h5
+*.pkl
+*.joblib
+*.model
+
+# 系统文件
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 日志文件
+*.log
+
+# 环境文件
+.env
+.venv
+venv/
+ENV/
+
+# 其他自动生成的文件
+.ipynb_checkpoints
+.jupyter
+.ipython 
