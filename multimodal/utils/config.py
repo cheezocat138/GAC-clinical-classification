@@ -20,11 +20,11 @@ DATA_PATHS = {
     'survival_data': ROOT_DIR / 'data' / 'raw' / 'common' / 'survival_three_groups.csv',
     
     # HiSeq数据
-    'hiseq_expression_data': ROOT_DIR / 'data' / 'raw' / 'hiseq' / 'expression_data.csv',
+    'hiseq_expression_data': ROOT_DIR / 'data' / 'raw' / 'hiseq' / 'HiSeqV2_transposed.csv',
     'hiseq_processed_data': ROOT_DIR / 'data' / 'processed' / 'hiseq_processed.csv',
     
     # RPPA数据
-    'rppa_data': ROOT_DIR / 'data' / 'raw' / 'rppa' / 'rppa_data.csv',
+    'rppa_data': ROOT_DIR / 'data' / 'raw' / 'rppa' / 'RPPA_transposed.csv',
     'rppa_processed_data': ROOT_DIR / 'data' / 'processed' / 'rppa_processed.csv',
 }
 
@@ -41,6 +41,7 @@ OUTPUT_DIRS = {
     'results_dir': ROOT_DIR / 'results',
     'logs_dir': ROOT_DIR / 'logs',
     'plots_dir': ROOT_DIR / 'results' / 'plots',
+    'model_dir': ROOT_DIR / 'models' / 'saved',
 }
 
 # 数据处理配置

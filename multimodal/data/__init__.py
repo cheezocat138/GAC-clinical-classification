@@ -7,6 +7,7 @@
 2. 特征工程
 3. 数据转换和标准化
 4. 数据验证和清洗
+5. 多模态数据整合
 """
 
 import pandas as pd
@@ -17,10 +18,13 @@ from imblearn.over_sampling import SMOTE
 # 使用绝对导入
 from multimodal.data.rppa_data import RPPADataProcessor
 from multimodal.data.hiseq_data import HiSeqDataProcessor
+from multimodal.data.multimodal_dataset import MultiModalDataProcessor, MultiModalDataset
 
 __all__ = [
     'RPPADataProcessor',
     'HiSeqDataProcessor',
+    'MultiModalDataProcessor',
+    'MultiModalDataset',
 ]
 
 # 版本信息

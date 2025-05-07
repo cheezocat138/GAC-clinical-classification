@@ -6,17 +6,25 @@ import os
 from multimodal.utils.config import CONFIG, DATA_PATHS, DATA_PROCESSING
 
 class HiSeqDataProcessor:
-    def __init__(self, data_dir: str = None):
+    def __init__(self, config=None):
         """
         初始化HiSeq数据处理器
         
         Args:
-            data_dir: 数据目录路径，如果为None则使用配置中的路径
+            config: 配置字典，如果为None则使用默认配置
         """
-        if data_dir is None:
-            self.data_dir = Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        else:
-            self.data_dir = Path(data_dir)
+        self.config = config if config is not None else CONFIG
+        # 设置数据目录为项目根目录
+        self.data_dir = Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    
+    def load_data(self):
+        """
+        加载数据的简化接口，内部调用load_and_process_data
+        
+        Returns:
+            pandas.DataFrame: 处理后的数据框
+        """
+        return self.load_and_process_data()
         
     def load_and_process_data(self, expression_file: str = None, 
                              survival_file: str = None) -> pd.DataFrame:
@@ -32,12 +40,12 @@ class HiSeqDataProcessor:
         """
         # 使用配置中的文件路径，如果未指定
         if expression_file is None:
-            expression_path = DATA_PATHS['hiseq_expression_data']
+            expression_path = self.config['DATA_PATHS']['hiseq_expression_data']
         else:
             expression_path = self.data_dir / expression_file
             
         if survival_file is None:
-            survival_path = DATA_PATHS['survival_data']
+            survival_path = self.config['DATA_PATHS']['survival_data']
         else:
             survival_path = self.data_dir / survival_file
         
@@ -79,7 +87,7 @@ class HiSeqDataProcessor:
         expression_filtered['survival_group_code'] = expression_filtered['survival_group_code'].astype(int)
         
         # 应用数据转换配置
-        transform_config = DATA_PROCESSING['transformation']['hiseq']
+        transform_config = self.config['DATA_PROCESSING']['transformation']['hiseq']
         
         # 填充缺失值
         if transform_config['fill_na'] is not None:
@@ -108,7 +116,7 @@ class HiSeqDataProcessor:
             output_file: 输出文件路径，如果为None则使用配置中的路径
         """
         if output_file is None:
-            output_path = DATA_PATHS['hiseq_processed_data']
+            output_path = self.config['DATA_PATHS']['hiseq_processed_data']
         else:
             output_path = self.data_dir / output_file
         
@@ -134,7 +142,7 @@ class HiSeqDataProcessor:
         
         # 应用特征选择
         if apply_feature_selection is None:
-            apply_feature_selection = DATA_PROCESSING['feature_selection']['enabled']
+            apply_feature_selection = self.config['DATA_PROCESSING']['feature_selection']['enabled']
             
         if apply_feature_selection:
             # 特征选择代码将在这里实现
